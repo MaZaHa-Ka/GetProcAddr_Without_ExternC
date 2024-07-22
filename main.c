@@ -8,18 +8,19 @@ FARPROC GetProcAddressNoExternCExport(HMODULE hModule, LPCSTR lpProcName)
 	if (!hModule || !lpProcName) { return NULL; }
 	MODULEINFO modInfo = { 0 };
 	size_t sz = strlen(lpProcName);
+	//printf("%d\n", sz);
 	// get bounds searching
 	if (!GetModuleInformation(GetCurrentProcess(), hModule, &modInfo, sizeof(modInfo))) { return NULL; }
 	// mk pattern from str
 	char* pattern = (char*)malloc(sz * 3); // last space \0
 	if (!pattern) { return NULL; }
 	for (size_t i = 0; i < sz; ++i) { sprintf(pattern + (3 * i), "%02x ", (unsigned char)lpProcName[i]); }
-	pattern[sz] = 0; // sz
+	pattern[sz * 3] = 0; // sz
 	//printf("%s\n", pattern); // sprintf buff
 	// scan mem
 	char* buffptr_pattern = pattern;
 	uintptr_t pMatch = 0;
-	for (uintptr_t MemPtr = (uintptr_t)hModule; MemPtr < ((uintptr_t)hModule + modInfo.SizeOfImage); MemPtr++) // todo скопируй asi в память и по нём прйдись
+	for (uintptr_t MemPtr = (uintptr_t)hModule; MemPtr < ((uintptr_t)hModule + modInfo.SizeOfImage); MemPtr++)
 	{
 		if (!*buffptr_pattern) { break; }
 		if (*(PBYTE)buffptr_pattern == '\?' || *(BYTE*)MemPtr == getByte(buffptr_pattern))
@@ -33,12 +34,12 @@ FARPROC GetProcAddressNoExternCExport(HMODULE hModule, LPCSTR lpProcName)
 		else
 		{ // срыв совпадения
 			buffptr_pattern = pattern;
-			if (pMatch) { MemPtr = pMatch; } // anti looping at start + fix bug
+			if (pMatch) { MemPtr = pMatch; }
 			pMatch = 0;
 		}
 	}
 	free(pattern);
-	if (!pMatch) { return NULL; }
+	if (!pMatch || (*((char*)pMatch - 1) != '?')) { return NULL; }
 	//printf("found str: 0x%p\n", (char*)pMatch - 1);
 	return GetProcAddress(hModule, (char*)pMatch - 1); // ? перед name
 #undef getByte;
@@ -74,7 +75,7 @@ FARPROC GetProcAddressNoExternCExportLDFile(HMODULE hModule, LPCSTR lpProcName)
 	char* pattern = (char*)malloc(sz * 3); // last space \0
 	if (!pattern) { return NULL; }
 	for (size_t i = 0; i < sz; ++i) { sprintf(pattern + (3 * i), "%02x ", (unsigned char)lpProcName[i]); }
-	pattern[sz] = 0; // sz
+	pattern[sz * 3] = 0; // sz
 	//printf("%s\n", pattern); // sprintf buff
 	// scan mem
 	char* buffptr_pattern = pattern;
@@ -93,12 +94,12 @@ FARPROC GetProcAddressNoExternCExportLDFile(HMODULE hModule, LPCSTR lpProcName)
 		else
 		{ // срыв совпадения
 			buffptr_pattern = pattern;
-			if (pMatch) { MemPtr = pMatch; } // anti looping at start + fix bug
+			if (pMatch) { MemPtr = pMatch; }
 			pMatch = 0;
 		}
 	}
 	free(pattern);
-	if (!pMatch) { free(buff); return NULL; }
+	if (!pMatch || (*((char*)pMatch - 1) != '?')) { free(buff); return NULL; }
 	//printf("found str: 0x%p\n", (char*)pMatch - 1); // print pointer 2 loaded file
 	FARPROC pRes = GetProcAddress(hModule, (char*)pMatch - 1); // ? перед name
 	free(buff);
