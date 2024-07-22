@@ -1,4 +1,5 @@
-FARPROC GetProcAddressNoExternCExportLoaded(HMODULE hModule, LPCSTR lpProcName)
+// not 4 overload names
+FARPROC GetProcAddressNoExternCExport(HMODULE hModule, LPCSTR lpProcName)
 {
 #define INRANGE(x,a,b) (x >= a && x <= b)
 #define getBits( x ) (INRANGE((x&(~0x20)),'A','F') ? ((x&(~0x20)) - 'A' + 0xa) : (INRANGE(x,'0','9') ? x - '0' : 0))
@@ -38,14 +39,14 @@ FARPROC GetProcAddressNoExternCExportLoaded(HMODULE hModule, LPCSTR lpProcName)
 	}
 	free(pattern);
 	if (!pMatch) { return NULL; }
-	printf("found str: 0x%p\n", (char*)pMatch - 1);
+	//printf("found str: 0x%p\n", (char*)pMatch - 1);
 	return GetProcAddress(hModule, (char*)pMatch - 1); // ? перед name
 #undef getByte;
 #undef getByte;
 #undef INRANGE;
 }
 
-FARPROC GetProcAddressNoExternCExport(HMODULE hModule, LPCSTR lpProcName)
+FARPROC GetProcAddressNoExternCExportLDFile(HMODULE hModule, LPCSTR lpProcName)
 {
 #define INRANGE(x,a,b) (x >= a && x <= b)
 #define getBits( x ) (INRANGE((x&(~0x20)),'A','F') ? ((x&(~0x20)) - 'A' + 0xa) : (INRANGE(x,'0','9') ? x - '0' : 0))
